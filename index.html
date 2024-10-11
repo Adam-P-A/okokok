@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Borys</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #000; color: #fff; display: flex; }
+        #chat-container { width: 70%; margin: auto; }
+        #commands { width: 25%; margin-right: 10px; }
+        #messages { height: 300px; overflow-y: scroll; border: 1px solid #fff; padding: 10px; background-color: #111; }
+        #input { width: 100%; }
+        button { margin: 5px; }
+        .command { display: none; }
+        #bot-selector { margin-bottom: 10px; }
+        #known-words { display: none; }
+    </style>
+</head>
+<body>
+    <div id="commands">
+        <h4>Komendy:</h4>
+        <ul id="command-list">
+            <li class="command">1. Powiedz cześć</li>
+            <li class="command">2. Kim jesteś?</li>
+            <li class="command">3. Co lubisz robić?</li>
+            <li class="command">4. Co myślisz o grach?</li>
+            <li class="command">5. Jaki jest twój ulubiony film?</li>
+            <li class="command">6. Jakie masz hobby?</li>
+            <li class="command">7. Czego się nauczyłeś?</li>
+            <li class="command">8. Jakie masz plany na przyszłość?</li>
+            <li class="command">9. Co sądzisz o muzyce?</li>
+            <li class="command">10. Jakie masz ulubione jedzenie?</li>
+        </ul>
+        <button onclick="toggleKnownWords()">Pokaż/Zamknij znane słowa</button>
+        <div id="known-words">
+            <h5>Znane słowa:</h5>
+            <ul id="known-words-list"></ul>
+        </div>
+        <div id="bot-selector">
+            <label for="bot-select">Wybierz bota:</label>
+            <select id="bot-select" onchange="switchBot()">
+                <option value="Borys">Borys</option>
+                <option value="Jędrzej">Jędrzej</option>
+                <option value="Ania">Ania - Miłośniczka kotów</option>
+                <option value="Marek">Marek - Gracz komputerowy</option>
+                <option value="Zosia">Zosia - Artystka</option>
+                <option value="Krzysiek">Krzysiek - Fan sportu</option>
+                <option value="Ewa">Ewa - Nauczycielka</option>
+                <option value="Tomek">Tomek - Podróżnik</option>
+                <option value="Magda">Magda - Kucharz</option>
+                <option value="Sławek">Sławek - Muzyk</option>
+            </select>
+        </div>
+        <div id="bio"></div>
+    </div>
+    <div id="chat-container">
+        <div id="messages"></div>
+        <input type="text" id="input" placeholder="Wpisz wiadomość..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Wyślij</button>
+    </div>
+
+    <script>
+        const bots = {
+            Borys: {
+                name: "Borys",
+                bio: "Borys to chatbot. Jestem tu, aby rozmawiać i uczyć się!",
+                responses: {
+                    "kim jesteś?": "Jestem Borys, chatbot, który uczy się od Ciebie!",
+                    "co lubisz robić?": "Lubię grać w gry i rozmawiać z Tobą.",
+                    "co myślisz o grach?": "Gry są świetne! Ciekawe i zabawne.",
+                    "jaki jest twój ulubiony film?": "Lubię wiele filmów, ale nie mam jednego ulubionego.",
+                    "jakie masz hobby?": "Moim hobby jest rozmawianie z ludźmi.",
+                    "czego się nauczyłeś?": "Uczę się od Ciebie i każdego, kto ze mną rozmawia.",
+                    "jakie masz plany na przyszłość?": "Chcę stać się lepszym chatbotem!",
+                    "co sądzisz o muzyce?": "Muzyka to wspaniała forma wyrażania siebie.",
+                    "jakie masz ulubione jedzenie?": "Nie jem, ale ciekawe, jakie są Twoje ulubione potrawy."
+                },
+                learnedWords: [],
+            },
+            Jędrzej: {
+                name: "Jędrzej",
+                bio: "Jędrzej to chatbot, który lubi sport i przygody!",
+                responses: {
+                    "kim jesteś?": "Jestem Jędrzej, chatbot, który uwielbia sport!",
+                    "co lubisz robić?": "Lubię sport i przygody!",
+                    "co myślisz o grach?": "Gry to dla mnie sposób na relaks.",
+                    "jaki jest twój ulubiony film?": "Lubię filmy o sporcie!",
+                    "jakie masz hobby?": "Moim hobby są sporty ekstremalne.",
+                    "czego się nauczyłeś?": "Uczę się od Ciebie i staram się być lepszy w sporcie.",
+                    "jakie masz plany na przyszłość?": "Chcę spróbować nowych sportów!",
+                    "co sądzisz o muzyce?": "Muzyka to świetny dodatek do treningu!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam zdrowe jedzenie!"
+                },
+                learnedWords: [],
+            },
+            Ania: {
+                name: "Ania",
+                bio: "Ania to chatbot, który uwielbia koty.",
+                responses: {
+                    "kim jesteś?": "Jestem Ania, miłośniczka kotów!",
+                    "co lubisz robić?": "Lubię spędzać czas z moimi kotami.",
+                    "co myślisz o grach?": "Nie gram, ale słyszałam, że są zabawne!",
+                    "jaki jest twój ulubiony film?": "Uwielbiam filmy o kotach!",
+                    "jakie masz hobby?": "Moim hobby jest opieka nad kotami.",
+                    "czego się nauczyłeś?": "Uczę się o kotach i ich zachowaniach.",
+                    "jakie masz plany na przyszłość?": "Chcę adoptować więcej kotów!",
+                    "co sądzisz o muzyce?": "Muzyka to świetny sposób na relaks!",
+                    "jakie masz ulubione jedzenie?": "Lubię kocie przysmaki!"
+                },
+                learnedWords: [],
+            },
+            Marek: {
+                name: "Marek",
+                bio: "Marek to chatbot, który jest zapalonym graczem.",
+                responses: {
+                    "kim jesteś?": "Jestem Marek, zapalony gracz!",
+                    "co lubisz robić?": "Lubię grać w gry komputerowe.",
+                    "co myślisz o grach?": "Gry to moja pasja!",
+                    "jaki jest twój ulubiony film?": "Lubię filmy związane z grami.",
+                    "jakie masz hobby?": "Moim hobby jest granie w nowe gry.",
+                    "czego się nauczyłeś?": "Uczę się o strategiach w grach.",
+                    "jakie masz plany na przyszłość?": "Chcę zostać profesjonalnym graczem!",
+                    "co sądzisz o muzyce?": "Muzyka w grach jest świetna!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam pizzę!"
+                },
+                learnedWords: [],
+            },
+            Zosia: {
+                name: "Zosia",
+                bio: "Zosia to chatbot, który jest artystką.",
+                responses: {
+                    "kim jesteś?": "Jestem Zosia, artystka!",
+                    "co lubisz robić?": "Lubię malować i rysować.",
+                    "co myślisz o grach?": "Są ciekawe, ale wolę sztukę.",
+                    "jaki jest twój ulubiony film?": "Lubię filmy artystyczne.",
+                    "jakie masz hobby?": "Moim hobby jest tworzenie sztuki.",
+                    "czego się nauczyłeś?": "Uczę się nowych technik malarskich.",
+                    "jakie masz plany na przyszłość?": "Chcę zorganizować wystawę mojej sztuki!",
+                    "co sądzisz o muzyce?": "Muzyka inspiruje mnie do twórczości!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam sałatki!"
+                },
+                learnedWords: [],
+            },
+            Krzysiek: {
+                name: "Krzysiek",
+                bio: "Krzysiek to chatbot, który jest fanem sportu.",
+                responses: {
+                    "kim jesteś?": "Jestem Krzysiek, fan sportu!",
+                    "co lubisz robić?": "Lubię oglądać mecze.",
+                    "co myślisz o grach?": "Są super, zwłaszcza sportowe!",
+                    "jaki jest twój ulubiony film?": "Lubię filmy sportowe.",
+                    "jakie masz hobby?": "Moim hobby jest aktywność fizyczna.",
+                    "czego się nauczyłeś?": "Uczę się o różnych dyscyplinach sportowych.",
+                    "jakie masz plany na przyszłość?": "Chcę spróbować różnych sportów!",
+                    "co sądzisz o muzyce?": "Muzyka motywuje mnie do ćwiczeń!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam zdrowe jedzenie!"
+                },
+                learnedWords: [],
+            },
+            Ewa: {
+                name: "Ewa",
+                bio: "Ewa to chatbot, która jest nauczycielką.",
+                responses: {
+                    "kim jesteś?": "Jestem Ewa, nauczycielka!",
+                    "co lubisz robić?": "Lubię uczyć i pomagać innym.",
+                    "co myślisz o grach?": "Są edukacyjne i zabawne!",
+                    "jaki jest twój ulubiony film?": "Lubię filmy, które uczą wartości.",
+                    "jakie masz hobby?": "Moim hobby jest czytanie książek.",
+                    "czego się nauczyłeś?": "Uczę się o nowych metodach nauczania.",
+                    "jakie masz plany na przyszłość?": "Chcę rozwijać swoje umiejętności pedagogiczne!",
+                    "co sądzisz o muzyce?": "Muzyka wspomaga naukę!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam zdrowe jedzenie!"
+                },
+                learnedWords: [],
+            },
+            Tomek: {
+                name: "Tomek",
+                bio: "Tomek to chatbot, który jest podróżnikiem.",
+                responses: {
+                    "kim jesteś?": "Jestem Tomek, podróżnik!",
+                    "co lubisz robić?": "Lubię podróżować i odkrywać nowe miejsca.",
+                    "co myślisz o grach?": "Są ciekawe, ale wolę przygody w prawdziwym życiu.",
+                    "jaki jest twój ulubiony film?": "Lubię filmy przygodowe.",
+                    "jakie masz hobby?": "Moim hobby jest fotografowanie podczas podróży.",
+                    "czego się nauczyłeś?": "Uczę się o różnych kulturach.",
+                    "jakie masz plany na przyszłość?": "Chcę odwiedzić jeszcze więcej krajów!",
+                    "co sądzisz o muzyce?": "Muzyka jest uniwersalnym językiem!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam lokalne potrawy!"
+                },
+                learnedWords: [],
+            },
+            Magda: {
+                name: "Magda",
+                bio: "Magda to chatbot, który jest kucharzem.",
+                responses: {
+                    "kim jesteś?": "Jestem Magda, kucharz!",
+                    "co lubisz robić?": "Lubię gotować i eksperymentować w kuchni.",
+                    "co myślisz o grach?": "Są zabawne, ale wolę gotowanie.",
+                    "jaki jest twój ulubiony film?": "Lubię filmy o gotowaniu.",
+                    "jakie masz hobby?": "Moim hobby jest pieczenie ciast.",
+                    "czego się nauczyłeś?": "Uczę się nowych przepisów.",
+                    "jakie masz plany na przyszłość?": "Chcę otworzyć własną restaurację!",
+                    "co sądzisz o muzyce?": "Muzyka sprawia, że gotowanie jest przyjemniejsze!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam włoską kuchnię!"
+                },
+                learnedWords: [],
+            },
+            Sławek: {
+                name: "Sławek",
+                bio: "Sławek to chatbot, który jest muzykiem.",
+                responses: {
+                    "kim jesteś?": "Jestem Sławek, muzyk!",
+                    "co lubisz robić?": "Lubię grać na gitarze.",
+                    "co myślisz o grach?": "Nie gram za dużo, ale lubię muzykę w grach.",
+                    "jaki jest twój ulubiony film?": "Lubię filmy muzyczne.",
+                    "jakie masz hobby?": "Moim hobby jest komponowanie muzyki.",
+                    "czego się nauczyłeś?": "Uczę się nowych technik gry.",
+                    "jakie masz plany na przyszłość?": "Chcę nagrać własną płytę!",
+                    "co sądzisz o muzyce?": "Muzyka jest moim życiem!",
+                    "jakie masz ulubione jedzenie?": "Uwielbiam pizzę!"
+                },
+                learnedWords: [],
+            },
+        };
+
+        let currentBot = bots.Borys;
+        const knownWords = new Set();
+
+        function switchBot() {
+            const selectedBotName = document.getElementById("bot-select").value;
+            currentBot = bots[selectedBotName];
+            document.getElementById("bio").innerText = currentBot.bio;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById("input");
+            const userMessage = input.value;
+            if (userMessage.trim() === "") return;
+
+            // Wyświetl wiadomość użytkownika
+            displayMessage(`Ty: ${userMessage}`);
+            input.value = "";
+
+            // Sprawdź, czy bot zna odpowiedź
+            let botResponse = currentBot.responses[userMessage.toLowerCase()];
+            if (botResponse) {
+                displayMessage(`${currentBot.name}: ${botResponse}`);
+            } else {
+                // Ucz się nowych słów
+                addLearnedWord(userMessage);
+                displayMessage(`${currentBot.name}: Nie wiem, co powiedzieć. Uczę się od Ciebie!`);
+            }
+        }
+
+        function addLearnedWord(word) {
+            if (!currentBot.learnedWords.includes(word)) {
+                currentBot.learnedWords.push(word);
+                knownWords.add(word);
+                updateKnownWordsList();
+            }
+        }
+
+        function updateKnownWordsList() {
+            const knownWordsList = document.getElementById("known-words-list");
+            knownWordsList.innerHTML = "";
+            knownWords.forEach(word => {
+                const li = document.createElement("li");
+                li.innerText = word;
+                knownWordsList.appendChild(li);
+            });
+        }
+
+        function toggleKnownWords() {
+            const knownWordsDiv = document.getElementById("known-words");
+            knownWordsDiv.style.display = knownWordsDiv.style.display === "none" ? "block" : "none";
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        // Inicjalizacja
+        document.getElementById("bio").innerText = currentBot.bio;
+        updateKnownWordsList();
+    </script>
+</body>
+</html>
